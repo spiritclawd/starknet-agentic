@@ -32,16 +32,29 @@ user-invocable: true
 
 Manage Starknet wallets for AI agents with native Account Abstraction support.
 
+## Recommended Runtime (x MCP Server)
+
+Use the SDK-owned MCP server from `x` as the default execution layer:
+
+```bash
+STARKNET_PRIVATE_KEY=0x... npx @keep-starknet-strange/x-mcp --network mainnet
+```
+
+Notes:
+- `x_execute` is opt-in only
+- Transfers are capped at `1000` per transaction
+- Addresses are validated through `fromAddress()`
+- All tool inputs are validated with `zod`
+
 ## Prerequisites
 
 ```bash
-npm install starknet@^8.9.1 @avnu/avnu-sdk@^4.0.1
+npm install x @avnu/avnu-sdk@^4.0.1
 ```
 
 Environment variables:
 ```
 STARKNET_RPC_URL=https://starknet-mainnet.g.alchemy.com/v2/YOUR_KEY
-STARKNET_ACCOUNT_ADDRESS=0x...
 STARKNET_PRIVATE_KEY=0x...
 AVNU_BASE_URL=https://starknet.api.avnu.fi (optional)
 AVNU_PAYMASTER_URL=https://starknet.paymaster.avnu.fi (optional)
@@ -50,7 +63,7 @@ AVNU_PAYMASTER_API_KEY=your_key (optional, for free gas)
 
 ## Available MCP Tools
 
-The Starknet MCP Server provides these tools for wallet operations:
+The recommended MCP runtime is `@keep-starknet-strange/x-mcp`. Tool availability may vary by version/network, but wallet flows should use MCP tools first and only fall back to direct SDK calls when needed.
 
 | Tool | Purpose | Key Features |
 |------|---------|--------------|
@@ -128,7 +141,21 @@ const result = await mcpClient.callTool({
 // Returns: { address, token, tokenAddress, balance, raw, decimals }
 ```
 
-**Direct starknet.js usage:**
+**Direct SDK usage fallback (`x`):**
+
+```typescript
+import { StarkSDK, StarkSigner, mainnetTokens } from "x";
+
+const sdk = new StarkSDK({ network: "mainnet" });
+const wallet = await sdk.connectWallet({
+  account: { signer: new StarkSigner(process.env.STARKNET_PRIVATE_KEY!) },
+});
+
+const balance = await wallet.balanceOf(mainnetTokens.ETH);
+console.log(balance.toFormatted());
+```
+
+**Direct starknet.js usage (advanced/legacy):**
 
 ```typescript
 import { RpcProvider, Contract } from "starknet";
@@ -445,7 +472,7 @@ Reference implementation: [Cartridge Controller](https://docs.cartridge.gg/contr
 | Variable | Purpose | Default |
 |----------|---------|---------|
 | `STARKNET_RPC_URL` | Starknet JSON-RPC endpoint | Required |
-| `STARKNET_ACCOUNT_ADDRESS` | Agent's account address | Required |
+| `STARKNET_ACCOUNT_ADDRESS` | Agent's account address | Optional (needed for direct starknet.js flows) |
 | `STARKNET_PRIVATE_KEY` | Agent's signing key | Required |
 | `AVNU_BASE_URL` | avnu API base URL | `https://starknet.api.avnu.fi` |
 | `AVNU_PAYMASTER_URL` | avnu paymaster URL | `https://starknet.paymaster.avnu.fi` |
@@ -461,6 +488,7 @@ Reference implementation: [Cartridge Controller](https://docs.cartridge.gg/contr
 
 ## References
 
+- [x SDK](https://github.com/keep-starknet-strange/x)
 - [starknet.js Documentation](https://www.starknetjs.com/)
 - [Starknet Account Abstraction](https://www.starknet.io/blog/native-account-abstraction/)
 - [Session Keys Guide](https://www.starknet.io/blog/session-keys-on-starknet-unlocking-gasless-secure-transactions/)

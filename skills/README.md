@@ -81,7 +81,6 @@ All skills require a Starknet RPC endpoint and account credentials:
 ```bash
 # Required environment variables
 export STARKNET_RPC_URL="https://starknet-mainnet.g.alchemy.com/v2/YOUR_KEY"
-export STARKNET_ACCOUNT_ADDRESS="0x..."
 export STARKNET_PRIVATE_KEY="0x..."
 
 # Optional: For gasless transactions
@@ -92,8 +91,11 @@ export AVNU_PAYMASTER_API_KEY="your_key"
 ### Dependencies
 
 ```bash
-# TypeScript skills (wallet, defi, identity)
-npm install starknet@^8.9.1 @avnu/avnu-sdk@^4.0.1
+# TypeScript skills (wallet, defi)
+npm install x @avnu/avnu-sdk@^4.0.1
+
+# Identity skill / direct contract usage
+npm install starknet
 
 # Python skills (mini-pay)
 pip install starknet-py qrcode[pil] python-telegram-bot
@@ -104,17 +106,16 @@ npm install starknet@^9.2.1 typhoon-sdk@^1.1.13
 
 ## MCP Server Integration
 
-These skills complement the Starknet MCP Server which provides direct tool access:
+These skills complement the MCP server shipped by the `x` SDK:
 
 ```json
 {
   "mcpServers": {
     "starknet": {
       "command": "npx",
-      "args": ["@starknet-agentic/mcp-server"],
+      "args": ["@keep-starknet-strange/x-mcp", "--network", "mainnet"],
       "env": {
         "STARKNET_RPC_URL": "https://...",
-        "STARKNET_ACCOUNT_ADDRESS": "0x...",
         "STARKNET_PRIVATE_KEY": "0x..."
       }
     }
@@ -122,12 +123,7 @@ These skills complement the Starknet MCP Server which provides direct tool acces
 }
 ```
 
-Available MCP tools:
-- `starknet_get_balance` / `starknet_get_balances`
-- `starknet_transfer`
-- `starknet_swap` / `starknet_get_quote`
-- `starknet_call_contract` / `starknet_invoke_contract`
-- `starknet_estimate_fee`
+Available tools are versioned by `x-mcp`. At minimum, expect wallet, contract interaction, DeFi, and fee-estimation flows. Check the server's `list_tools` response in your MCP client for the exact inventory.
 
 ## Skill Format
 
@@ -169,7 +165,7 @@ See the main [CONTRIBUTING.md](../CONTRIBUTING.md) for guidelines.
 
 1. Create `skills/<skill-name>/SKILL.md`
 2. Follow the frontmatter format above
-3. Include code examples with starknet.js patterns
+3. Include code examples with `x` SDK patterns (and starknet.js for low-level/legacy paths)
 4. Add error handling documentation
 5. Submit PR for review
 
@@ -178,6 +174,7 @@ See the main [CONTRIBUTING.md](../CONTRIBUTING.md) for guidelines.
 - [Starknet Agentic Docs](https://starknet-agentic.xyz)
 - [Agent Skills Specification](https://agentskills.io/)
 - [Starknet Documentation](https://docs.starknet.io/)
+- [x SDK](https://github.com/keep-starknet-strange/x)
 - [avnu SDK](https://docs.avnu.fi/)
 - [ERC-8004 Standard](https://eips.ethereum.org/EIPS/eip-8004)
 

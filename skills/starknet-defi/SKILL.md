@@ -34,13 +34,25 @@ user-invocable: true
 
 Execute DeFi operations on Starknet using avnu aggregator and native protocols.
 
+## Recommended Runtime (x MCP Server)
+
+For agent execution, prefer the MCP server shipped by the `x` SDK:
+
+```bash
+STARKNET_PRIVATE_KEY=0x... npx @keep-starknet-strange/x-mcp --network mainnet
+```
+
+Use this skill as the strategy/intent layer and route execution through MCP tools when available.
+
 ## Prerequisites
 
 ```bash
-npm install starknet@^8.9.1 @avnu/avnu-sdk@^4.0.1
+npm install x @avnu/avnu-sdk@^4.0.1
 ```
 
 ## Token Swaps (avnu SDK v4)
+
+The direct SDK examples below are useful for custom integrations and debugging. In agent workflows, prefer MCP tool calls first.
 
 ### Get Quote and Execute Swap
 
@@ -290,7 +302,7 @@ const tokens = await fetchTokens({ page: 0, size: 20, tags: ["verified"] });
 | Variable | Purpose | Default |
 |----------|---------|---------|
 | `STARKNET_RPC_URL` | Starknet JSON-RPC endpoint | Required |
-| `STARKNET_ACCOUNT_ADDRESS` | Agent's account address | Required |
+| `STARKNET_ACCOUNT_ADDRESS` | Agent's account address | Optional (needed for direct starknet.js flows) |
 | `STARKNET_PRIVATE_KEY` | Agent's signing key | Required |
 | `AVNU_BASE_URL` | avnu API base URL | `https://starknet.api.avnu.fi` |
 | `AVNU_PAYMASTER_URL` | avnu paymaster URL | `https://starknet.paymaster.avnu.fi` |
