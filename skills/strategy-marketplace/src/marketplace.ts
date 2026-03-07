@@ -18,6 +18,11 @@ type MarketplaceState = {
   offerings: ServiceOffering[];
 };
 
+/**
+ * Gets or initializes the global marketplace state.
+ * Uses globalThis to persist state across module reloads in tests.
+ * @returns The marketplace state containing listings and offerings
+ */
 function getMarketplaceState(): MarketplaceState {
   const globalState = globalThis as typeof globalThis & {
     __strategyMarketplaceState?: MarketplaceState;
@@ -204,6 +209,12 @@ export async function getAgentServices(agentId: string): Promise<ServiceOffering
 
 // Helper functions
 
+/**
+ * Checks if a strategy qualifies for certification.
+ * Certification criteria: min 10 games, positive ROI, win rate > 50%.
+ * @param trackRecord - The track record to evaluate
+ * @returns Promise resolving to true if certified, false otherwise
+ */
 async function checkCertification(trackRecord: StrategyListing['trackRecord']): Promise<boolean> {
   // Certification criteria:
   // - Minimum 10 games played
@@ -215,18 +226,41 @@ async function checkCertification(trackRecord: StrategyListing['trackRecord']): 
   return winRate > 0.5;
 }
 
+/**
+ * Generates a unique strategy listing ID.
+ * Uses UUID v4 with 'strat_' prefix.
+ * @returns A unique listing identifier
+ */
 function generateListingId(): string {
   return `strat_${randomUUID().replace(/-/g, '')}`;
 }
 
+/**
+ * Generates a unique service offering ID.
+ * Uses UUID v4 with 'svc_' prefix.
+ * @returns A unique offering identifier
+ */
 function generateOfferingId(): string {
   return `svc_${randomUUID().replace(/-/g, '')}`;
 }
 
+/**
+ * Generates a unique access ID for purchased strategies.
+ * Uses UUID v4 with 'acc_' prefix.
+ * @returns A unique access identifier
+ */
 function generateAccessId(): string {
   return `acc_${randomUUID().replace(/-/g, '')}`;
 }
 
+/**
+ * Parses and validates a non-negative price value.
+ * Accepts both string and number inputs.
+ * @param value - The price value to parse
+ * @param label - The field name for error messages
+ * @returns The parsed price as a number
+ * @throws Error if price is negative or not a finite number
+ */
 function parseNonNegativePrice(value: string | number, label: string): number {
   const price = typeof value === 'number' ? value : Number.parseFloat(value);
   if (!Number.isFinite(price) || price < 0) {
@@ -235,6 +269,11 @@ function parseNonNegativePrice(value: string | number, label: string): number {
   return price;
 }
 
+/**
+ * Stores or updates a strategy listing in the marketplace.
+ * @param listing - The listing to store
+ * @returns Promise that resolves when storage is complete
+ */
 async function storeListing(listing: StrategyListing): Promise<void> {
   const listings = getMarketplaceState().listings;
   const idx = listings.findIndex(item => item.id === listing.id);
@@ -246,10 +285,19 @@ async function storeListing(listing: StrategyListing): Promise<void> {
   console.log(`[Marketplace] Stored listing: ${listing.id}`);
 }
 
+/**
+ * Retrieves all strategy listings from the marketplace.
+ * @returns Promise resolving to array of all listings
+ */
 async function getAllListings(): Promise<StrategyListing[]> {
   return [...getMarketplaceState().listings];
 }
 
+/**
+ * Stores or updates a service offering in the marketplace.
+ * @param offering - The offering to store
+ * @returns Promise that resolves when storage is complete
+ */
 async function storeOffering(offering: ServiceOffering): Promise<void> {
   const offerings = getMarketplaceState().offerings;
   const idx = offerings.findIndex(item => item.id === offering.id);
@@ -261,16 +309,32 @@ async function storeOffering(offering: ServiceOffering): Promise<void> {
   console.log(`[Marketplace] Stored offering: ${offering.id}`);
 }
 
+/**
+ * Retrieves all service offerings from the marketplace.
+ * @returns Promise resolving to array of all offerings
+ */
 async function getAllOfferings(): Promise<ServiceOffering[]> {
   return [...getMarketplaceState().offerings];
 }
 
+/**
+ * Resets the marketplace state for testing purposes.
+ * Clears all stored listings and offerings.
+ * @internal Only for use in test environments
+ */
 export function __resetMarketplaceForTests(): void {
   const state = getMarketplaceState();
   state.listings.length = 0;
   state.offerings.length = 0;
 }
 
+/**
+ * Validates that a string is non-empty after trimming whitespace.
+ * @param value - The string to validate
+ * @param field - The field name for error messages
+ * @returns The trimmed string
+ * @throws Error if the string is empty after trimming
+ */
 function requireNonEmptyString(value: string, field: string): string {
   const normalized = value.trim();
   if (!normalized) {
@@ -279,6 +343,13 @@ function requireNonEmptyString(value: string, field: string): string {
   return normalized;
 }
 
+/**
+ * Validates that a number is finite.
+ * @param value - The number to validate
+ * @param field - The field name for error messages
+ * @returns The validated number
+ * @throws Error if the number is not finite (NaN or Infinity)
+ */
 function requireFiniteNumber(value: number, field: string): number {
   if (!Number.isFinite(value)) {
     throw new Error(`Invalid ${field}: expected a finite number`);
@@ -286,6 +357,13 @@ function requireFiniteNumber(value: number, field: string): number {
   return value;
 }
 
+/**
+ * Validates a track record for a strategy listing.
+ * Ensures wins, losses, and totalGames are non-negative and consistent.
+ * @param trackRecord - The track record to validate
+ * @returns Validated track record with integer counts
+ * @throws Error if track record is invalid
+ */
 function validateTrackRecord(trackRecord: StrategyListing['trackRecord']): StrategyListing['trackRecord'] {
   const wins = Math.trunc(requireFiniteNumber(trackRecord.wins, 'trackRecord.wins'));
   const losses = Math.trunc(requireFiniteNumber(trackRecord.losses, 'trackRecord.losses'));
@@ -305,6 +383,13 @@ function validateTrackRecord(trackRecord: StrategyListing['trackRecord']): Strat
   return { wins, losses, totalGames, avgRoi };
 }
 
+/**
+ * Validates and normalizes strategy publish input.
+ * Ensures all required fields are present and valid.
+ * @param config - The publish configuration to validate
+ * @returns Validated configuration
+ * @throws Error if any field fails validation
+ */
 function validatePublishStrategyInput(config: {
   agentId: string;
   name: string;
@@ -346,6 +431,13 @@ function validatePublishStrategyInput(config: {
   };
 }
 
+/**
+ * Validates and normalizes service offering input.
+ * Ensures all required fields are present and valid.
+ * @param config - The service configuration to validate
+ * @returns Validated configuration
+ * @throws Error if any field fails validation
+ */
 function validateServiceInput(config: {
   agentId: string;
   serviceName: string;
@@ -374,6 +466,13 @@ function validateServiceInput(config: {
   };
 }
 
+/**
+ * Validates and normalizes a discovery query.
+ * Ensures all optional fields are valid if provided.
+ * @param query - The discovery query to validate
+ * @returns Validated query
+ * @throws Error if any provided field fails validation
+ */
 function validateDiscoveryQuery(query: DiscoveryQuery): DiscoveryQuery {
   const normalized: DiscoveryQuery = { ...query };
   if (normalized.game !== undefined) {
@@ -395,6 +494,14 @@ function validateDiscoveryQuery(query: DiscoveryQuery): DiscoveryQuery {
   return normalized;
 }
 
+/**
+ * Verifies payment for strategy purchase (placeholder implementation).
+ * In production, this would integrate with x402 settlement.
+ * @param buyerAgentId - The buyer's agent ID
+ * @param strategyId - The strategy being purchased
+ * @param expectedPrice - The expected price to verify against
+ * @returns Promise resolving to true if payment is verified
+ */
 async function verifyPaymentStub(
   buyerAgentId: string,
   strategyId: string,

@@ -9,6 +9,11 @@ import { getAgent } from './registry';
 type PerformanceInput = Omit<PerformanceRecord, 'timestamp'> & { timestamp?: number };
 type TrackingState = { history: Map<string, PerformanceRecord[]> };
 
+/**
+ * Gets or initializes the global tracking state.
+ * Uses globalThis to persist state across module reloads in tests.
+ * @returns The tracking state containing performance history
+ */
 function getTrackingState(): TrackingState {
   const globalState = globalThis as typeof globalThis & {
     __strategyMarketplaceTrackingState?: TrackingState;
@@ -146,6 +151,12 @@ export async function getTopStrategies(agentId: string, limit = 5): Promise<Arra
 
 // Helper functions
 
+/**
+ * Stores a performance record in the tracking history.
+ * Appends to existing history for the agent.
+ * @param record - The performance record to store
+ * @returns Promise that resolves when storage is complete
+ */
 async function storePerformance(record: PerformanceRecord): Promise<void> {
   const historyStore = getTrackingState().history;
   const history = historyStore.get(record.agentId) ?? [];
@@ -154,15 +165,32 @@ async function storePerformance(record: PerformanceRecord): Promise<void> {
   console.log(`[Tracking] Stored: ${record.agentId} - ${record.game}/${record.strategy}`);
 }
 
+/**
+ * Retrieves performance history for a specific agent.
+ * @param agentId - The agent ID to get history for
+ * @returns Promise resolving to array of performance records
+ */
 async function getPerformanceHistory(agentId: string): Promise<PerformanceRecord[]> {
   const normalizedAgentId = requireNonEmptyString(agentId, 'agentId');
   return [...(getTrackingState().history.get(normalizedAgentId) ?? [])];
 }
 
+/**
+ * Resets the tracking state for testing purposes.
+ * Clears all stored performance history.
+ * @internal Only for use in test environments
+ */
 export function __resetTrackingForTests(): void {
   getTrackingState().history.clear();
 }
 
+/**
+ * Validates that a string is non-empty after trimming whitespace.
+ * @param value - The string to validate
+ * @param field - The field name for error messages
+ * @returns The trimmed string
+ * @throws Error if the string is empty after trimming
+ */
 function requireNonEmptyString(value: string, field: string): string {
   const normalized = value.trim();
   if (!normalized) {
@@ -171,6 +199,13 @@ function requireNonEmptyString(value: string, field: string): string {
   return normalized;
 }
 
+/**
+ * Validates that a number is finite.
+ * @param value - The number to validate
+ * @param field - The field name for error messages
+ * @returns The validated number
+ * @throws Error if the number is not finite (NaN or Infinity)
+ */
 function requireFiniteNumber(value: number, field: string): number {
   if (!Number.isFinite(value)) {
     throw new Error(`Invalid ${field}: expected a finite number`);
@@ -178,6 +213,13 @@ function requireFiniteNumber(value: number, field: string): number {
   return value;
 }
 
+/**
+ * Validates and normalizes performance input data.
+ * Ensures all required fields are present and valid.
+ * @param record - The performance input to validate
+ * @returns Validated performance input
+ * @throws Error if any field fails validation
+ */
 function validatePerformanceInput(record: PerformanceInput): PerformanceInput {
   const duration = requireFiniteNumber(record.duration, 'duration');
   if (duration < 0) {

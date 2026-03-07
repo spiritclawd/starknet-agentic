@@ -21,6 +21,11 @@ const MARKETPLACE_CONTRACTS = {
 const SKILL_NAME_PATTERN = /^[a-z0-9][a-z0-9-]{0,63}$/;
 type RegistryState = { agents: Map<string, RegisteredAgent> };
 
+/**
+ * Gets or initializes the global registry state.
+ * Uses globalThis to persist state across module reloads in tests.
+ * @returns The registry state containing the agents map
+ */
 function getRegistryState(): RegistryState {
   const globalState = globalThis as typeof globalThis & {
     __strategyMarketplaceRegistryState?: RegistryState;
@@ -100,6 +105,12 @@ export async function updateAgent(
 
 // Helper functions (placeholder implementations)
 
+/**
+ * Generates a unique agent ID.
+ * In production, uses the token_id from ERC-8004 mint transfer event.
+ * Falls back to random hex string for development/testing.
+ * @returns A unique agent identifier string
+ */
 function generateAgentId(): string {
   // In production, use token_id emitted from ERC-8004 mint transfer event.
   const mintedTokenId = process.env.ERC8004_TOKEN_ID;
@@ -109,6 +120,12 @@ function generateAgentId(): string {
   return `0x${randomBytes(32).toString('hex')}`;
 }
 
+/**
+ * Gets the current agent's Starknet address.
+ * Validates the address format and throws in production if not set.
+ * @returns The agent's Starknet address as a hex string
+ * @throws Error if AGENT_ADDRESS is not set in production environment
+ */
 function getCurrentAgentAddress(): string {
   const address = process.env.AGENT_ADDRESS;
   if (address && /^0x[0-9a-fA-F]+$/.test(address)) {
@@ -120,20 +137,42 @@ function getCurrentAgentAddress(): string {
   return `0x${'0'.repeat(64)}`;
 }
 
+/**
+ * Stores an agent in the registry.
+ * In production, this would persist to on-chain storage via ERC-8004 contract.
+ * @param agent - The agent to store
+ * @returns Promise that resolves when storage is complete
+ */
 async function storeAgent(agent: RegisteredAgent): Promise<void> {
   getRegistryState().agents.set(agent.id, agent);
   // In production: store on-chain via contract
   console.log(`[Registry] Stored agent: ${agent.name}`);
 }
 
+/**
+ * Retrieves all stored agents from the registry.
+ * @returns Promise resolving to array of all registered agents
+ */
 async function getStoredAgents(): Promise<RegisteredAgent[]> {
   return Array.from(getRegistryState().agents.values());
 }
 
+/**
+ * Resets the registry state for testing purposes.
+ * Clears all stored agents from the in-memory registry.
+ * @internal Only for use in test environments
+ */
 export function __resetRegistryForTests(): void {
   getRegistryState().agents.clear();
 }
 
+/**
+ * Validates that a string is non-empty after trimming whitespace.
+ * @param value - The string to validate
+ * @param field - The field name for error messages
+ * @returns The trimmed string
+ * @throws Error if the string is empty after trimming
+ */
 function requireNonEmptyString(value: string, field: string): string {
   const normalized = value.trim();
   if (!normalized) {
@@ -142,6 +181,13 @@ function requireNonEmptyString(value: string, field: string): string {
   return normalized;
 }
 
+/**
+ * Validates that an array contains only non-empty unique strings.
+ * @param values - The array to validate
+ * @param field - The field name for error messages
+ * @returns Array of validated unique strings
+ * @throws Error if array is empty or contains invalid entries
+ */
 function requireStringArray(values: string[], field: string): string[] {
   if (!Array.isArray(values) || values.length === 0) {
     throw new Error(`Invalid ${field}: expected a non-empty array`);
@@ -157,6 +203,13 @@ function requireStringArray(values: string[], field: string): string[] {
   return [...new Set(normalized)];
 }
 
+/**
+ * Validates and normalizes agent registration input.
+ * Checks name format, description, capabilities, and games array.
+ * @param config - The registration configuration to validate
+ * @returns Validated and normalized registration config
+ * @throws Error if any field fails validation
+ */
 function validateRegistrationInput(config: AgentRegistration): AgentRegistration {
   const name = requireNonEmptyString(config.name, 'name');
   if (!SKILL_NAME_PATTERN.test(name)) {
@@ -176,6 +229,13 @@ function validateRegistrationInput(config: AgentRegistration): AgentRegistration
   };
 }
 
+/**
+ * Validates and normalizes agent update input.
+ * Only validates fields that are present in the updates object.
+ * @param updates - Partial updates to validate
+ * @returns Validated updates object
+ * @throws Error if any provided field fails validation
+ */
 function validateUpdateInput(
   updates: Partial<Pick<AgentRegistration, 'capabilities' | 'games'>>
 ): Partial<Pick<AgentRegistration, 'capabilities' | 'games'>> {
